@@ -1,7 +1,9 @@
+import tensorflow as tf
 from tokenizer import Tokenizer
 from dataset import ACP2Dataset, ACP2TrainDataset
 import unittest
 from unittest import TestCase
+from layer import Retention
 
 TEST_PATH = '~/Downloads/acp2 main test - Sheet1(1).tsv'
 TRAIN_PATH = '~/Downloads/acp2_main_train - Sheet1(1).tsv'
@@ -29,6 +31,13 @@ class TestTokenizer(TestCase):
         vocab = dataset.generate_vocab(3)
         tokenizer = Tokenizer(25, vocab)
         self.assertEqual(len(tokenizer.tokenizers), 3)
+
+
+class TestRetention(TestCase):
+    def test_init(self):
+        retention = Retention(128, 25)
+        x = tf.random.uniform((1, 25, 128))
+        self.assertEqual(retention(x).shape, (1, 25, 128))
 
 if __name__ == '__main__':
     unittest.main()
