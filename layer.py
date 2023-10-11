@@ -18,18 +18,19 @@ class GAT(Layer):
         value_dim=2, 
         dropout=0.2), 
         list(range(self.seq_len))))
+        self.activ = LeakyReLU()
 
     def call(self, x, training=False):
       shape = tf.shape(x)
       x = tf.transpose(x, perm=[0, 2, 1])
-      x = tf.split(x, self.seq_len, axis=2)
+      x = tf.split(x, self.seq_len//self.ngrams, axis=2)
       nodes = list(map(lambda subset: list(map(lambda edges: 
       tf.concat(list(map(lambda a,b : tf.concat([a, b], -1), 
       tf.split(edges[0], edges[0].shape[-1], 1),
        tf.split(edges[1], edges[1].shape[-1], 1)
       )), -1),
        list(product(tf.split(subset, 1, 2), repeat=2)))), x))
-      alpha = list(map(lambda a, h: a(*h, *h), self.mhas, nodes))
+      alpha = list(map(lambda a, h: self.activ(a(*h, *h)), self.mhas, nodes))
       x = tf.stack(alpha, -1)
       x = tf.reduce_mean(x, 2)
       x = tf.transpose(x, perm=[0, 2, 1])
