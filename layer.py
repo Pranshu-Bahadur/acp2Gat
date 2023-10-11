@@ -1,4 +1,6 @@
-from tensorflow.keras.layers import Layer, Dense, MultiHeadAttention
+from tensorflow.keras.layers import Layer, Dense, MultiHeadAttention, \
+ LeakyReLU, LayerNormalization
+from tensorflow.keras import Sequential
 from itertools import product
 
 class GAT(Layer):
@@ -12,13 +14,18 @@ class GAT(Layer):
         key_dim=2,
         value_dim=2), 
         list(range(self.seq_len//self.ngrams))))
+        self.norm = Sequential([
+          LeakyReLU(),
+          ])
 
     def call(self, x, training=False):
       shape = tf.shape(x)
       x = tf.transpose(x, perm=[0, 2, 1])
       x = tf.split(x, self.seq_len//self.ngrams, axis=2)
-      nodes = tf.vectorized_map(lambda subset: tf.vectorized_map(lambda edges: tf.concat(edges, 2), product(tf.split(subset, 1, 2)), repeat=2), x)
-      alpha = list(map(lambda a, h: a(h, h), self.mhas, nodes))
+      nodes = list(map(lambda subset: list(map(lambda edges: tf.concat(edges, 2),
+       list(product(tf.split(subset, 1, 2), repeat=2)))), x))
+      alpha = list(map(lambda a, h: self.norm(a(*h, *h)), self.mhas, nodes))
       alpha = tf.stack(alpha, -1)
-      x = tf.reshape(alpha, shape)     
+      x = tf.reduce_mean(alpha, -1)
+      x = tf.transpose(x, perm=[0, 2, 1])
       return x
