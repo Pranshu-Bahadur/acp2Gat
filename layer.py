@@ -17,7 +17,7 @@ class GAT(Layer):
         key_dim=2,
         value_dim=2, 
         dropout=0.2), 
-        list(range(self.seq_len))))
+        list(range(self.seq_len//self.ngrams))))
         self.activ = LeakyReLU()
 
     def call(self, x, training=False):
