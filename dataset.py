@@ -9,13 +9,15 @@ class ACP2Dataset(object):
         _df = read_csv(fpath, sep='\t')[columns]
         self.sequences = _df[columns[0]]
         self.labels = _df[columns[1]]
+        
 
 class ACP2TrainDataset(ACP2Dataset):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.tokenizer = self.generate_amino_acids()
 
     def generate_amino_acids(self) -> List[str]:
-        max_length = max(self.sequences.str.len())
+        max_length = 50#max(self.sequences.str.len())
         _tv_kwargs = {
                 'split' : 'character',
                 'ngrams' : 1,
@@ -26,10 +28,10 @@ class ACP2TrainDataset(ACP2Dataset):
                 }
         _tv_layer = TextVectorization(**_tv_kwargs)
         _tv_layer.adapt(self.sequences)
-        return _tv_layer.get_vocabulary()[2:]
+        return _tv_layer#.get_vocabulary()
 
     def generate_vocab(self, ngrams : int = 1) -> List[List[str]]:
         _amino_acids = self.generate_amino_acids()
         _result = list(map(lambda ngram: product(*list(repeat(_amino_acids, ngram+1))), list(range(ngrams))))
         _result = list(map(lambda x: list(map(lambda y: ''.join(y), x)), _result))
-        return [reduce(lambda x, y: x+y, _result[:i], []) for i in range(1, ngrams+1)] #@TODO: add option for non-reduced vocab
+        return _result#[reduce(lambda x, y: x+y, _result[:i], []) for i in range(1, ngrams+1)] #@TODO: add option for non-reduced vocab
