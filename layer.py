@@ -2,7 +2,7 @@ from keras_core.layers import GroupNormalization
 from tensorflow.keras.layers import Layer, Dense, MultiHeadAttention, \
  LeakyReLU, LayerNormalization
 from tensorflow.keras import Sequential
-from itertools import product, repeat
+from itertools import product, repeat, combinations
 import torch
 
 
@@ -29,10 +29,12 @@ class GAT(Layer):
       tf.split(edges[0], edges[0].shape[-1], 2),
        tf.split(edges[1], edges[1].shape[-1], 2)
       )), -1),
-       list(product(tf.split(subset, 1, 2), repeat=2)))), x))
-      alpha = list(map(lambda a, h: self.activ(a(*h, *h)), self.mhas, nodes))
+       list(combinations(tf.split(subset, self.ngrams, -1), r=2)
+       ))), x))
+      alpha = list(map(lambda a, h: self.activ(a(tf.concat(h, -1), tf.concat(h, -1))), self.mhas, nodes))
       x = tf.stack(alpha, -1)
       x = tf.reduce_mean(x, 2)
       x = tf.transpose(x, perm=[0, 2, 1])
-      x = tf.reduce_mean(x, -1)
+      #x = tf.reduce_mean(x, -1)
+      print(x.shape)
       return x
